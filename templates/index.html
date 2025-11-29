@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI HR Assistant</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #f4f5f7;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 85%;
+            max-width: 900px;
+            margin: auto;
+            padding-top: 30px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 32px;
+            font-weight: 600;
+        }
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #ddd;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 14px 25px;
+            cursor: pointer;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            background: #eee;
+            margin-right: 5px;
+            border-radius: 6px 6px 0 0;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        .tab.active {
+            background: white;
+            border-bottom: 1px solid white;
+            font-weight: bold;
+        }
+        .tab-content {
+            display: none;
+            padding: 25px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 0 6px 6px 6px;
+            min-height: 400px;
+        }
+        .tab-content.active { display: block; }
+
+        /* Chat box */
+        .chat-box {
+            width: 100%;
+            height: 320px;
+            overflow-y: auto;
+            background: #fafafa;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #ddd;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Chat bubbles */
+        .user-msg, .bot-msg {
+            padding: 10px 15px;
+            margin: 5px 0;
+            border-radius: 20px;
+            max-width: 70%;
+            word-wrap: break-word;
+            display: inline-block;
+            line-height: 1.4;
+        }
+        .user-msg {
+            background: #ffeccc;
+            margin-left: auto;  /* right side */
+            text-align: left;
+            border: 1px solid #f0c27b;
+        }
+        .bot-msg {
+            background: #e5eefc;
+            margin-right: auto;   /* left side */
+            text-align: left;
+            border: 1px solid #99c2ff;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+        }
+        input[type="text"], input[type="number"], input[type="date"], textarea {
+            width: 100%;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-family: 'Poppins';
+            box-sizing: border-box;
+        }
+        button {
+            background: orange;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            color: white;
+            transition: background 0.3s;
+            font-weight: 500;
+        }
+        button:hover { background: darkorange; }
+
+        /* Leave popup */
+        #popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            z-index: 1000;
+            width: 350px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        #popup h3 { margin-top: 0; }
+        #popup button { margin-top: 15px; width: 100px; }
+        #overlay {
+            display: none;
+            position: fixed;
+            top:0;
+            left:0;
+            width:100%;
+            height:100%;
+            background: rgba(0,0,0,0.4);
+            z-index: 999;
+        }
+
+        /* Statistics */
+        .stat-card {
+            background: #fafafa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            border-left: 4px solid orange;
+        }
+        .total-box {
+            margin-top: 20px;
+            padding: 12px;
+            background: #fff3cd;
+            border-left: 5px solid orange;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>AI HR Assistant</h1>
+    <div class="tabs">
+        <div id="tab-chat" class="tab active" onclick="showTab('chat')">Chat</div>
+        <div id="tab-leave" class="tab" onclick="showTab('leave')">Leave Request</div>
+        <div id="tab-stats" class="tab" onclick="showTab('stats')">Statistics</div>
+    </div>
+
+    <!-- Chat -->
+    <div id="chat" class="tab-content active">
+        <div id="chatBox" class="chat-box"></div>
+        <div class="input-row">
+            <input type="text" id="userInput" placeholder="Ask HR..." onkeydown="if(event.key==='Enter'){sendMessage()}"/>
+            <button onclick="sendMessage()">Send</button>
+            <button onclick="refreshChat()">Refresh</button>
+            <button onclick="exitChat()">Exit</button>
+        </div>
+    </div>
+
+    <!-- Leave -->
+    <div id="leave" class="tab-content">
+        <h3>Submit Leave Request</h3>
+        <label>Employee Name</label><input type="text" id="leaveName">
+        <label>Employee ID</label><input type="text" id="leaveId">
+        <label>Leave From</label><input type="date" id="leaveFrom">
+        <label>Leave To</label><input type="date" id="leaveTo">
+        <label>Reason</label><textarea id="leaveReason" rows="4"></textarea>
+        <br><br>
+        <button onclick="submitLeave()">Submit 💼</button>
+    </div>
+
+    <!-- Statistics -->
+    <div id="stats" class="tab-content">
+        <h3>HR Analytics & Statistics</h3>
+        <div id="statsList"></div>
+        <div id="totalCount" class="total-box">Total Leaves Applied: 0</div>
+    </div>
+</div>
+
+<div id="overlay"></div>
+<div id="popup">
+    <h3>💼 Leave Request Submitted</h3>
+    <div id="popupContent"></div>
+    <button onclick="closePopup()">OK</button>
+</div>
+
+<script>
+let leaveRecords = [];
+
+function showTab(tabName) {
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+    document.getElementById(tabName).classList.add("active");
+    document.getElementById("tab-" + tabName).classList.add("active");
+    if(tabName==="stats") updateStatistics();
+}
+
+function refreshChat(){ document.getElementById("chatBox").innerHTML=""; }
+function exitChat(){ alert("Close tab to exit chat."); }
+
+function formatAIResponse(text){
+    return text.replace(/\*\*(.*?)\*\*/g,"<b>$1</b>")
+               .replace(/\*(.*?)\*/g,"<i>$1</i>")
+               .replace(/^\s*-\s+(.*)/gm,"• $1")
+               .replace(/\n/g,"<br>");
+}
+
+function getEmojiForMessage(msg){
+    msg=msg.toLowerCase();
+    if(msg.includes("hi")||msg.includes("hello")) return "👋";
+    if(msg.includes("leave")||msg.includes("request")) return "💼";
+    if(msg.includes("policy")) return "📝";
+    return "🤖";
+}
+
+async function sendMessage(){
+    let input=document.getElementById("userInput");
+    let msg=input.value.trim();
+    if(msg==="") return;
+
+    let chatBox=document.getElementById("chatBox");
+
+    // user bubble (right)
+    let userDiv=document.createElement("div");
+    userDiv.className="user-msg";
+    userDiv.innerText=msg;
+    chatBox.appendChild(userDiv);
+    chatBox.scrollTop=chatBox.scrollHeight;
+    input.value="";
+
+    // typing bubble (left)
+    let typingDiv=document.createElement("div");
+    typingDiv.className="bot-msg";
+    typingDiv.innerText="HR Typing... 🤖";
+    chatBox.appendChild(typingDiv);
+    chatBox.scrollTop=chatBox.scrollHeight;
+
+    try{
+        let res=await fetch("/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:msg})});
+        let data=await res.json();
+        chatBox.removeChild(typingDiv);
+
+        let botDiv=document.createElement("div");
+        botDiv.className="bot-msg";
+        botDiv.innerHTML=`${getEmojiForMessage(msg)} ${formatAIResponse(data.reply)}`;
+        chatBox.appendChild(botDiv);
+        chatBox.scrollTop=chatBox.scrollHeight;
+    } catch(err){
+        typingDiv.innerHTML=`HR Error: ${err}`;
+    }
+}
+
+function submitLeave(){
+    let name=document.getElementById("leaveName").value;
+    let id=document.getElementById("leaveId").value;
+    let from=document.getElementById("leaveFrom").value;
+    let to=document.getElementById("leaveTo").value;
+    let reason=document.getElementById("leaveReason").value;
+
+    if(!name||!id||!from||!to||!reason){ alert("Please fill all fields."); return; }
+
+    leaveRecords.push({name,id,from,to,reason});
+    document.getElementById("popupContent").innerHTML=`
+        <p><b>Name:</b> ${name}</p>
+        <p><b>Employee ID:</b> ${id}</p>
+        <p><b>From:</b> ${from}</p>
+        <p><b>To:</b> ${to}</p>
+        <p><b>Reason:</b> ${reason}</p>
+    `;
+    document.getElementById("overlay").style.display="block";
+    document.getElementById("popup").style.display="block";
+
+    document.getElementById("leaveName").value="";
+    document.getElementById("leaveId").value="";
+    document.getElementById("leaveFrom").value="";
+    document.getElementById("leaveTo").value="";
+    document.getElementById("leaveReason").value="";
+}
+
+function closePopup(){ document.getElementById("popup").style.display="none"; document.getElementById("overlay").style.display="none"; }
+
+function updateStatistics(){
+    let statsDiv=document.getElementById("statsList");
+    statsDiv.innerHTML="";
+    leaveRecords.forEach(l=>{
+        statsDiv.innerHTML+=`
+            <div class="stat-card">
+                <b>Employee:</b> ${l.name} (${l.id})<br>
+                <b>From:</b> ${l.from} — <b>To:</b> ${l.to}<br>
+                <b>Reason:</b> ${l.reason}
+            </div>`;
+    });
+    document.getElementById("totalCount").innerText="Total Leaves Applied: "+leaveRecords.length;
+}
+</script>
+</body>
+</html>

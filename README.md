@@ -1,4 +1,6 @@
 AI HR ASSISTANT (Flask-Based Project)
+
+
 📌 Overview
 
 This project is an AI-powered HR Assistant built using Flask and Google’s Gemini AI model.
@@ -16,7 +18,9 @@ Respond politely in a conversational format
 
 The system is lightweight, fast, and works entirely through a web interface (HTML + CSS + JS + Flask).
 
+
 ⚡ Features
+
 ✔ AI Chatbot
 
 Provides natural HR-style responses using Gemini 2.5 Flash.
